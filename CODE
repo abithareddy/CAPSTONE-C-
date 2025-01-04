@@ -1,0 +1,249 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <iomanip> // For formatting
+#include <ctime> // For date handling
+
+using namespace std;
+
+// Structure for Member
+struct Member {
+    int id;
+    string name;
+    string type; // Staff or Student
+};
+
+// Structure for Book
+struct Book {
+    int id;
+    string title;
+    string author;
+    bool isBorrowed;
+    int borrowDate; // Day of the year when the book was borrowed
+};
+
+// Global vectors to store members and books
+vector<Member> members;
+vector<Book> books;
+
+// Function prototypes
+void staffLogin();
+void studentLogin();
+void addMember();
+void addBook();
+void viewBooks();
+void borrowBook();
+void returnBook();
+void mainMenu();
+
+// Utility function to get the current date
+int getCurrentDate() {
+    time_t t = time(0);       // Get current time
+    tm *now = localtime(&t);  // Convert to local time structure
+    return now->tm_yday;      // Return day of the year (1-365)
+}
+
+// Constants
+const string STAFF_PASSWORD = "1234";
+const string STUDENT_PASSWORD = "5678";
+const int FINE_PER_DAY = 5; // Fine amount per overdue day
+
+int main() {
+    mainMenu();
+    return 0;
+}
+
+void mainMenu() {
+    int choice;
+    while (true) {
+        cout << "\n--- Library Management System ---\n";
+        cout << "1. Staff Login\n";
+        cout << "2. Student Login\n";
+        cout << "3. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                staffLogin();
+                break;
+            case 2:
+                studentLogin();
+                break;
+            case 3:
+                cout << "Exiting the system. Goodbye!\n";
+                return;
+            default:
+                cout << "Invalid choice. Please try again.\n";
+        }
+    }
+}
+
+void staffLogin() {
+    string password;
+    cout << "Enter Staff Password: ";
+    cin >> password;
+
+    if (password == STAFF_PASSWORD) {
+        int choice;
+        while (true) {
+            cout << "\n--- Staff Menu ---\n";
+            cout << "1. Add Member\n";
+            cout << "2. Add Book\n";
+            cout << "3. View Books\n";
+            cout << "4. Logout\n";
+            cout << "Enter your choice: ";
+            cin >> choice;
+
+            switch (choice) {
+                case 1:
+                    addMember();
+                    break;
+                case 2:
+                    addBook();
+                    break;
+                case 3:
+                    viewBooks();
+                    break;
+                case 4:
+                    cout << "Logging out...\n";
+                    return;
+                default:
+                    cout << "Invalid choice. Please try again.\n";
+            }
+        }
+    } else {
+        cout << "Incorrect password. Access denied.\n";
+    }
+}
+
+void studentLogin() {
+    string password;
+    cout << "Enter Student Password: ";
+    cin >> password;
+
+    if (password == STUDENT_PASSWORD) {
+        int choice;
+        while (true) {
+            cout << "\n--- Student Menu ---\n";
+            cout << "1. View Books\n";
+            cout << "2. Borrow Book\n";
+            cout << "3. Return Book\n";
+            cout << "4. Logout\n";
+            cout << "Enter your choice: ";
+            cin >> choice;
+
+            switch (choice) {
+                case 1:
+                    viewBooks();
+                    break;
+                case 2:
+                    borrowBook();
+                    break;
+                case 3:
+                    returnBook();
+                    break;
+                case 4:
+                    cout << "Logging out...\n";
+                    return;
+                default:
+                    cout << "Invalid choice. Please try again.\n";
+            }
+        }
+    } else {
+        cout << "Incorrect password. Access denied.\n";
+    }
+}
+
+void addMember() {
+    Member newMember;
+    cout << "Enter Member ID: ";
+    cin >> newMember.id;
+    cout << "Enter Member Name: ";
+    cin.ignore();
+    getline(cin, newMember.name);
+    cout << "Enter Member Type (Staff/Student): ";
+    getline(cin, newMember.type);
+
+    members.push_back(newMember);
+    cout << "Member added successfully!\n";
+}
+
+void addBook() {
+    Book newBook;
+    cout << "Enter Book ID: ";
+    cin >> newBook.id;
+    cout << "Enter Book Title: ";
+    cin.ignore();
+    getline(cin, newBook.title);
+    cout << "Enter Book Author: ";
+    getline(cin, newBook.author);
+
+    newBook.isBorrowed = false;
+    newBook.borrowDate = -1; // Default value for not borrowed
+    books.push_back(newBook);
+    cout << "Book added successfully!\n";
+}
+
+void viewBooks() {
+    cout << "\n--- Book Catalog ---\n";
+    cout << left << setw(10) << "Book ID" << setw(30) << "Title" << setw(20) << "Author" << "Status\n";
+    cout << string(60, '-') << "\n";
+
+    for (const auto &book : books) {
+        cout << left << setw(10) << book.id
+             << setw(30) << book.title
+             << setw(20) << book.author
+             << (book.isBorrowed ? "Borrowed" : "Available") << "\n";
+    }
+}
+
+void borrowBook() {
+    int bookId;
+    cout << "Enter Book ID to borrow: ";
+    cin >> bookId;
+
+    for (auto &book : books) {
+        if (book.id == bookId) {
+            if (book.isBorrowed) {
+                cout << "Book is already borrowed.\n";
+            } else {
+                book.isBorrowed = true;
+                book.borrowDate = getCurrentDate(); // Record the borrow date
+                cout << "Book borrowed successfully!\n";
+            }
+            return;
+        }
+    }
+    cout << "Book ID not found.\n";
+}
+
+void returnBook() {
+    int bookId;
+    cout << "Enter Book ID to return: ";
+    cin >> bookId;
+
+    for (auto &book : books) {
+        if (book.id == bookId) {
+            if (!book.isBorrowed) {
+                cout << "Book is not borrowed.\n";
+            } else {
+                // Calculate fine
+                int currentDay = getCurrentDate();
+                int overdueDays = currentDay - book.borrowDate - 14; // Assuming 14 days borrowing period
+                if (overdueDays > 0) {
+                    int fine = overdueDays * FINE_PER_DAY;
+                    cout << "Late submission! You have a fine of " << fine << " units.\n";
+                } else {
+                    cout << "Book returned on time.\n";
+                }
+
+                book.isBorrowed = false; // Mark as returned
+                book.borrowDate = -1; // Reset borrow date
+                cout << "Book returned successfully!\n";
+            }
+            return;
+        }
+    }
+    cout << "Book ID not found.\n";
+}
